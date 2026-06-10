@@ -13,8 +13,8 @@
   --nav-logo-size: 1.45rem;
   --nav-link-size: 1.05rem;
   --nav-height-legacy: 3.5rem;
-  --dot-color: rgba(21, 101, 192, 0.07);
-  --dot-size: 22px;
+  --dot-color: rgba(21, 101, 192, 0.18);
+  --dot-size: 20px;
 }
 
 * { box-sizing: border-box; }
