@@ -37,6 +37,8 @@ pytest
 3. Railway uses `railway.toml` / `Procfile` to start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 4. Health check: `GET /health`
 
+**Note:** Do not add a custom `nixpacks.toml` with manual `pip install` — it breaks Railway's Python auto-detection. Let Nixpacks detect Python from `requirements.txt`.
+
 ## Environment Variables
 
 | Variable | Description |
