@@ -34,3 +34,11 @@ def test_sacs_pdf_uses_landscape_pages():
     assert b"/MediaBox" in pdf
     assert b"792" in pdf
     assert b"612" in pdf
+
+
+def test_sacs_pdf_page2_long_term_layout_structure():
+    pdf = generate_sacs_pdf(_sample_client(), _sample_report())
+    assert pdf.count(b"/MediaBox") == 2
+    assert len(pdf) > 3500
+    # Page 2 subtitle uses oblique font; dotted-line dash pattern is drawn on both pages
+    assert b"/Helvetica-Oblique" in pdf
