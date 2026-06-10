@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Clients — AW Portal{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Clients</h1>
+  <a class="btn btn-primary" href="/clients/new">Add Client</a>
+</div>
+
+{% if clients %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Client 1</th>
+      <th>Client 2</th>
+      <th>Last Report</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for client in clients %}
+    <tr>
+      <td><strong>{{ client.display_name }}</strong></td>
+      <td>{{ client.name_client1 }} ({{ client.age_client1 }})</td>
+      <td>{% if client.is_married %}{{ client.name_client2 }} ({{ client.age_client2 }}){% else %}—{% endif %}</td>
+      <td>{{ client.last_report_date or '—' }}</td>
+      <td class="actions">
+        <a href="/clients/{{ client.id }}">Edit</a>
+        <a href="/clients/{{ client.id }}/reports/new" class="btn btn-small">Generate Report</a>
+        <a href="/reports?client_id={{ client.id }}">History</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <p>No clients yet. Add your first client to get started.</p>
+  <a class="btn btn-primary" href="/clients/new">Add Client</a>
+</div>
+{% endif %}
+{% endblock %}

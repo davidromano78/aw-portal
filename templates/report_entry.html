@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Report Entry — {{ client.display_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Quarterly Report: {{ client.display_name }}</h1>
+  {% if report and report.id %}
+  <div class="actions">
+    <a href="/reports/{{ report.id }}/download/sacs" class="btn btn-secondary">Download SACS</a>
+    <a href="/reports/{{ report.id }}/download/tcc" class="btn btn-secondary">Download TCC</a>
+    <a href="/reports/{{ report.id }}/download/all" class="btn btn-primary">Download All (ZIP)</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if errors %}
+<div class="alert alert-error">
+  <strong>Please fix the following:</strong>
+  <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" action="{% if report and report.id %}/reports/{{ report.id }}{% else %}/clients/{{ client.id }}/reports{% endif %}" id="report-form">
+  <section class="card">
+    <h2>Report Details</h2>
+    <div class="grid-3">
+      <label>Report Date <input type="date" name="report_date" required value="{{ report.report_date if report else '' }}"></label>
+      <label>Status
+        <select name="status">
+          <option value="draft" {% if report and report.status == 'draft' %}selected{% endif %}>Draft</option>
+          <option value="complete" {% if report and report.status == 'complete' %}selected{% endif %}>Complete</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>SACS Fields</h2>
+    <p class="hint">Static inflow/outflow from client profile: ${{ "{:,.2f}".format(client.monthly_salary) }} / ${{ "{:,.2f}".format(client.monthly_expense_budget) }}</p>
+    <div class="grid-2">
+      {% set sacs_vals = report if report else {} %}
+      <label>Inflow Balance
+        <input type="number" step="0.01" name="inflow_balance" class="calc-field" data-field="inflow_balance"
+          value="{{ sacs_vals.inflow_balance if sacs_vals.inflow_balance is not none else '' }}">
+      </label>
+      <label>Outflow Balance
+        <input type="number" step="0.01" name="outflow_balance" class="calc-field" data-field="outflow_balance"
+          value="{{ sacs_vals.outflow_balance if sacs_vals.outflow_balance is not none else '' }}">
+      </label>
+      <label>Private Reserve Balance
+        <input type="number" step="0.01" name="private_reserve_balance" class="calc-field" data-field="private_reserve_balance"
+          value="{{ sacs_vals.private_reserve_balance if sacs_vals.private_reserve_balance is not none else '' }}">
+      </label>
+      <label>Schwab Brokerage Balance
+        <input type="number" step="0.01" name="schwab_brokerage_balance" class="calc-field"
+          value="{{ sacs_vals.schwab_brokerage_balance if sacs_vals.schwab_brokerage_balance is not none else '' }}">
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>TCC Account Balances</h2>
+    {% set balance_map = {} %}
+    {% if report and report.balances %}
+      {% for b in report.balances %}
+        {% set _ = balance_map.update({b.account_id: b}) %}
+      {% endfor %}
+    {% endif %}
+
+    {% for account in client.accounts if account.category in ['retirement', 'non_retirement', 'trust', 'liability'] %}
+    {% set bal = balance_map.get(account.id, {}) %}
+    {% set last = last_balances.get(account.id, {}) %}
+    <div class="balance-row {% if not bal and not last %}incomplete{% endif %}">
+      <div class="balance-label">
+        <strong>{{ account.label }}</strong>
+        <span class="tag">{{ account.category.replace('_', ' ') }} · {{ account.owner }}</span>
+        {% if last %}<span class="last-value">Last: ${{ "{:,.2f}".format(last.balance) }} <button type="button" class="use-last" data-target="balance_{{ account.id }}" data-value="{{ last.balance }}">Use last</button></span>{% endif %}
+      </div>
+      <label>Balance <input type="number" step="0.01" name="balance_{{ account.id }}" id="balance_{{ account.id }}" class="calc-field account-balance" data-account-id="{{ account.id }}" data-category="{{ account.category }}" data-owner="{{ account.owner }}" value="{{ bal.balance if bal else '' }}" required></label>
+      {% if account.category in ['retirement', 'non_retirement'] %}
+      <label>Cash <input type="number" step="0.01" name="cash_{{ account.id }}" value="{{ bal.cash_balance if bal and bal.cash_balance is not none else '' }}"></label>
+      {% endif %}
+      <label>As of <input type="date" name="as_of_{{ account.id }}" value="{{ bal.as_of_date if bal else '' }}"></label>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="card totals-panel">
+    <h2>Calculated Totals</h2>
+    <div class="totals-grid" id="totals-grid">
+      <div><span>Excess (Inflow − Outflow)</span><strong id="total-excess">—</strong></div>
+      <div><span>Private Reserve Target</span><strong id="total-target">—</strong></div>
+      <div><span>Client 1 Retirement</span><strong id="total-c1">—</strong></div>
+      <div><span>Client 2 Retirement</span><strong id="total-c2">—</strong></div>
+      <div><span>Non-Retirement Total</span><strong id="total-nr">—</strong></div>
+      <div><span>Trust Value</span><strong id="total-trust">—</strong></div>
+      <div><span>Grand Total</span><strong id="total-grand">—</strong></div>
+      <div><span>Liabilities Total</span><strong id="total-liab">—</strong></div>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save Report</button>
+    <a href="/clients" class="btn btn-secondary">Back to Clients</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  const CLIENT_ID = {{ client.id }};
+  const CLIENT_STATIC = {
+    monthly_salary: {{ client.monthly_salary }},
+    monthly_expense_budget: {{ client.monthly_expense_budget }},
+    insurance_deductibles_total: {{ client.insurance_deductibles_total }},
+    private_reserve_target_override: {{ client.private_reserve_target_override if client.private_reserve_target_override else 'null' }}
+  };
+</script>
+<script src="/static/js/reports.js"></script>
+{% endblock %}

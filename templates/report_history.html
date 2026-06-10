@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Report History — AW Portal{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Report History{% if client_id %} (filtered){% endif %}</h1>
+  <a href="/clients" class="btn btn-secondary">Back to Clients</a>
+</div>
+
+{% if reports %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th>Grand Total</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for report in reports %}
+    <tr>
+      <td>{{ report.display_name }}</td>
+      <td>{{ report.report_date }}</td>
+      <td><span class="status status-{{ report.status }}">{{ report.status }}</span></td>
+      <td>{% if report.grand_total is not none %}${{ "{:,.2f}".format(report.grand_total) }}{% else %}—{% endif %}</td>
+      <td class="actions">
+        <a href="/reports/{{ report.id }}">Edit</a>
+        <a href="/reports/{{ report.id }}/download/all">Download</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No reports yet.</p></div>
+{% endif %}
+{% endblock %}

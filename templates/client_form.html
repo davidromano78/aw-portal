@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'create' %}New Client{% else %}Edit Client{% endif %} — AW Portal{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{% if mode == 'create' %}Add Client{% else %}Edit Client{% endif %}</h1>
+  {% if client %}<a href="/clients/{{ client.id }}/reports/new" class="btn btn-primary">Generate Report</a>{% endif %}
+</div>
+
+<form method="post" action="{% if mode == 'create' %}/clients{% else %}/clients/{{ client.id }}{% endif %}" id="client-form">
+  <section class="card">
+    <h2>Client Information</h2>
+    <div class="grid-2">
+      <label>Display Name <input type="text" name="display_name" required value="{{ client.display_name if client else '' }}"></label>
+      <label class="checkbox-label"><input type="checkbox" name="is_married" {% if client and client.is_married %}checked{% endif %}> Married (Client 1 + Client 2)</label>
+      <label>Client 1 Name <input type="text" name="name_client1" required value="{{ client.name_client1 if client else '' }}"></label>
+      <label>Client 2 Name <input type="text" name="name_client2" value="{{ client.name_client2 if client else '' }}"></label>
+      <label>Client 1 DOB <input type="date" name="dob_client1" required value="{{ client.dob_client1 if client else '' }}"></label>
+      <label>Client 2 DOB <input type="date" name="dob_client2" value="{{ client.dob_client2 if client else '' }}"></label>
+      <label>Client 1 SSN (last 4) <input type="text" name="ssn_last4_client1" maxlength="4" value="{{ client.ssn_last4_client1 if client else '' }}"></label>
+      <label>Client 2 SSN (last 4) <input type="text" name="ssn_last4_client2" maxlength="4" value="{{ client.ssn_last4_client2 if client else '' }}"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Static Financial Data</h2>
+    <div class="grid-2">
+      <label>Monthly Salary (Inflow) <input type="number" step="0.01" name="monthly_salary" value="{{ client.monthly_salary if client else 0 }}"></label>
+      <label>Monthly Expense Budget (Outflow) <input type="number" step="0.01" name="monthly_expense_budget" value="{{ client.monthly_expense_budget if client else 0 }}"></label>
+      <label>Insurance Deductibles Total <input type="number" step="0.01" name="insurance_deductibles_total" value="{{ client.insurance_deductibles_total if client else 0 }}"></label>
+      <label>Private Reserve Target Override (optional) <input type="number" step="0.01" name="private_reserve_target_override" value="{{ client.private_reserve_target_override if client and client.private_reserve_target_override else '' }}"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-header">
+      <h2>Account Structure</h2>
+      <button type="button" class="btn btn-secondary" id="add-account">Add Account</button>
+    </div>
+    <div id="accounts-container"></div>
+    <input type="hidden" name="account_count" id="account_count" value="0">
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save Client</button>
+    <a href="/clients" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  const existingAccounts = {{ (client.accounts if client else []) | tojson }};
+</script>
+<script src="/static/js/clients.js"></script>
+{% endblock %}
